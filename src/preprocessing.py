@@ -240,21 +240,29 @@ class ImagePreprocessor:
     """
 
     def __init__(self, target_size: Tuple[int, int] = (224, 224),
-                 normalize: bool = True):
+                 normalize: bool = True, normalization_type: str = 'imagenet'):
         """
         Args:
             target_size: Target image size (height, width)
-            normalize: Whether to normalize with ImageNet stats
+            normalize: Whether to normalize
+            normalization_type: 'imagenet' or 'clip'
         """
         if not HAS_PIL:
             raise ImportError("PIL/Pillow is required for image processing")
 
         self.target_size = target_size
         self.normalize = normalize
+        self.normalization_type = normalization_type
 
-        # ImageNet normalization statistics (standard for pre-trained models)
-        self.mean = np.array([0.485, 0.456, 0.406])
-        self.std = np.array([0.229, 0.224, 0.225])
+        # Normalization statistics
+        if normalization_type == 'clip':
+            # CLIP normalization (for CLIP models)
+            self.mean = np.array([0.48145466, 0.4578275, 0.40821073])
+            self.std = np.array([0.26862954, 0.26130258, 0.27577711])
+        else:
+            # ImageNet normalization (standard for most pre-trained models)
+            self.mean = np.array([0.485, 0.456, 0.406])
+            self.std = np.array([0.229, 0.224, 0.225])
 
     def load_and_preprocess(self, image_path: str,
                             augment: bool = False) -> Optional[np.ndarray]:
@@ -341,12 +349,13 @@ class VideoPreprocessor:
 
     def __init__(self, num_frames: int = 8,
                  target_size: Tuple[int, int] = (224, 224),
-                 normalize: bool = True):
+                 normalize: bool = True, normalization_type: str = 'imagenet'):
         """
         Args:
             num_frames: Number of frames to sample from each video
             target_size: Target frame size (height, width)
-            normalize: Whether to normalize frames with ImageNet stats
+            normalize: Whether to normalize frames
+            normalization_type: 'imagenet' or 'clip'
         """
         if not HAS_CV2:
             raise ImportError("OpenCV (cv2) is required for video processing")
@@ -354,10 +363,17 @@ class VideoPreprocessor:
         self.num_frames = num_frames
         self.target_size = target_size
         self.normalize = normalize
+        self.normalization_type = normalization_type
 
-        # ImageNet normalization
-        self.mean = np.array([0.485, 0.456, 0.406])
-        self.std = np.array([0.229, 0.224, 0.225])
+        # Normalization statistics
+        if normalization_type == 'clip':
+            # CLIP normalization (for CLIP models)
+            self.mean = np.array([0.48145466, 0.4578275, 0.40821073])
+            self.std = np.array([0.26862954, 0.26130258, 0.27577711])
+        else:
+            # ImageNet normalization (standard for most pre-trained models)
+            self.mean = np.array([0.485, 0.456, 0.406])
+            self.std = np.array([0.229, 0.224, 0.225])
 
     def load_and_sample_frames(self, video_path: str) -> Optional[List[np.ndarray]]:
         """

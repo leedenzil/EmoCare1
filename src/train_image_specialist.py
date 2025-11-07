@@ -165,7 +165,8 @@ def main(args):
         root_dir=args.root_dir,
         tokenizer_name='distilbert-base-uncased',  # Not used for images, but required
         max_length=128,
-        augment_images=True  # Enable augmentation for training
+        augment_images=True,  # Enable augmentation for training
+        normalization_type='clip'  # Use CLIP normalization for CLIP models
     )
 
     val_dataset = MultimodalSentimentDataset(
@@ -173,7 +174,8 @@ def main(args):
         root_dir=args.root_dir,
         tokenizer_name='distilbert-base-uncased',
         max_length=128,
-        augment_images=False
+        augment_images=False,
+        normalization_type='clip'  # Use CLIP normalization for CLIP models
     )
 
     # Create dataloaders

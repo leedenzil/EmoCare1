@@ -179,7 +179,8 @@ def main(args):
         max_length=128,
         num_video_frames=args.num_frames,
         video_aggregation='concat',  # Return all frames
-        augment_images=False  # No augmentation for video frames
+        augment_images=False,  # No augmentation for video frames
+        normalization_type='clip'  # Use CLIP normalization for CLIP models
     )
 
     val_dataset = MultimodalSentimentDataset(
@@ -189,7 +190,8 @@ def main(args):
         max_length=128,
         num_video_frames=args.num_frames,
         video_aggregation='concat',
-        augment_images=False
+        augment_images=False,
+        normalization_type='clip'  # Use CLIP normalization for CLIP models
     )
 
     # Create dataloaders

@@ -45,7 +45,8 @@ class MultimodalSentimentDataset(Dataset):
                  image_size: Tuple[int, int] = (224, 224),
                  num_video_frames: int = 8,
                  augment_images: bool = False,
-                 video_aggregation: str = 'concat'):
+                 video_aggregation: str = 'concat',
+                 normalization_type: str = 'imagenet'):
         """
         Args:
             csv_path: Path to CSV file with data
@@ -56,6 +57,7 @@ class MultimodalSentimentDataset(Dataset):
             num_video_frames: Number of frames to sample from videos
             augment_images: Whether to apply data augmentation (for training)
             video_aggregation: How to aggregate video frames ('mean', 'max', 'concat')
+            normalization_type: 'imagenet' or 'clip' for image/video normalization
         """
         if not HAS_TORCH:
             raise ImportError("PyTorch is required for Dataset class")
@@ -72,10 +74,14 @@ class MultimodalSentimentDataset(Dataset):
 
         # Initialize preprocessors
         self.text_preprocessor = RedditTextPreprocessor()
-        self.image_preprocessor = ImagePreprocessor(target_size=image_size)
+        self.image_preprocessor = ImagePreprocessor(
+            target_size=image_size,
+            normalization_type=normalization_type
+        )
         self.video_preprocessor = VideoPreprocessor(
             num_frames=num_video_frames,
-            target_size=image_size
+            target_size=image_size,
+            normalization_type=normalization_type
         )
 
         # Initialize tokenizer
