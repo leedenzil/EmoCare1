@@ -35,7 +35,7 @@ REDDIT_USER_AGENT = os.getenv("REDDIT_USER_AGENT")
 
 # File Paths
 DATA_DIR = "data"
-ID_CSV = "active_reddit_post_ids.csv"  # Input: CSV with post IDs
+ID_CSV = os.path.join(DATA_DIR, 'active_reddit_post_ids.csv')  # Input: CSV with post IDs
 RAW_DATA_CSV = os.path.join(DATA_DIR, 'raw_data.csv')  # Output: Append here
 
 # Media Download Settings
