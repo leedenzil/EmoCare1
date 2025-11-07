@@ -2,7 +2,7 @@
 .env
 
 # Data directories
-data/
+
 media/
 models/
 
