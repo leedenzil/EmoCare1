@@ -38,7 +38,7 @@ GEMINI_MODEL = "gemini-2.5-flash"  # Use the latest stable model
 # File Paths
 DATA_DIR = "data"
 RAW_DATA_CSV = os.path.join(DATA_DIR, 'raw_data.csv')
-LABELED_DATA_CSV = os.path.join(DATA_DIR, 'labeled_data_1k.csv')
+LABELED_DATA_CSV = os.path.join(DATA_DIR, 'labeled_data.csv')
 
 # Labeling Configuration
 NEW_LABEL_TARGET = 1000  # Max posts to label in this run
