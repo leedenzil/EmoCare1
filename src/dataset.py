@@ -175,11 +175,21 @@ class MultimodalSentimentDataset(Dataset):
             else:
                 # Use zero video
                 zero_video = self.video_preprocessor.get_zero_video()
-                video_tensor = torch.from_numpy(zero_video).permute(2, 0, 1).float()
+                if self.video_aggregation == 'concat':
+                    # Repeat to match (num_frames, C, H, W) shape
+                    video_tensor = torch.from_numpy(zero_video).permute(2, 0, 1).float()
+                    video_tensor = video_tensor.unsqueeze(0).repeat(self.video_preprocessor.num_frames, 1, 1, 1)
+                else:
+                    video_tensor = torch.from_numpy(zero_video).permute(2, 0, 1).float()
         else:
             # No video - use zero tensor
             zero_video = self.video_preprocessor.get_zero_video()
-            video_tensor = torch.from_numpy(zero_video).permute(2, 0, 1).float()
+            if self.video_aggregation == 'concat':
+                # Repeat to match (num_frames, C, H, W) shape
+                video_tensor = torch.from_numpy(zero_video).permute(2, 0, 1).float()
+                video_tensor = video_tensor.unsqueeze(0).repeat(self.video_preprocessor.num_frames, 1, 1, 1)
+            else:
+                video_tensor = torch.from_numpy(zero_video).permute(2, 0, 1).float()
 
         # Get sentiment label
         sentiment = item.get('post_sentiment', 'Neutral/Other')
