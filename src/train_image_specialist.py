@@ -22,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from dataset import MultimodalSentimentDataset, get_class_weights
 from preprocessing import SentimentLabelEncoder
+from results_logger import ResultsLogger
 
 
 class ImageSpecialistModel(nn.Module):
@@ -225,6 +226,22 @@ def main(args):
         num_training_steps=total_steps
     )
 
+    # Initialize results logger
+    logger = ResultsLogger(args.output_dir, 'image_specialist')
+    logger.log_config({
+        'model_name': args.model_name,
+        'epochs': args.epochs,
+        'batch_size': args.batch_size,
+        'learning_rate': args.learning_rate,
+        'weight_decay': args.weight_decay,
+        'warmup_steps': args.warmup_steps,
+        'dropout': args.dropout,
+        'patience': args.patience,
+        'train_samples': len(train_dataset),
+        'val_samples': len(val_dataset),
+        'class_weights': class_weights.cpu().tolist()
+    })
+
     # Training loop
     print(f"\nStarting training for {args.epochs} epochs...")
     best_f1 = 0.0
@@ -247,19 +264,33 @@ def main(args):
         )
         print(f"Val Loss: {val_loss:.4f}, Val F1: {val_f1:.4f}")
 
-        # Print classification report
+        # Log epoch results
+        logger.log_epoch(epoch + 1, train_loss, train_f1, val_loss, val_f1)
+
+        # Print and log classification report
         if epoch % 2 == 0:  # Every 2 epochs
             print("\nClassification Report:")
             target_names = [SentimentLabelEncoder.decode(i)
                           for i in range(SentimentLabelEncoder.NUM_CLASSES)]
-            print(classification_report(val_labels, val_preds,
+            report_str = classification_report(val_labels, val_preds,
                                        target_names=target_names,
-                                       zero_division=0))
+                                       zero_division=0)
+            print(report_str)
+
+            # Log as dictionary for JSON
+            report_dict = classification_report(val_labels, val_preds,
+                                       target_names=target_names,
+                                       zero_division=0,
+                                       output_dict=True)
+            logger.log_classification_report(epoch + 1, report_dict)
 
         # Save best model
         if val_f1 > best_f1:
             best_f1 = val_f1
             patience_counter = 0
+
+            # Log best metrics
+            logger.log_best_metrics(epoch + 1, val_f1, val_loss)
 
             # Save model
             save_path = os.path.join(args.output_dir, 'best_model.pt')
@@ -280,6 +311,14 @@ def main(args):
         if patience_counter >= args.patience:
             print(f"\nEarly stopping triggered after {epoch + 1} epochs")
             break
+
+    # Log final metrics and save results
+    logger.log_final_metrics(
+        best_val_f1=best_f1,
+        total_epochs=epoch + 1,
+        early_stopped=(patience_counter >= args.patience)
+    )
+    logger.save()
 
     print(f"\n{'='*60}")
     print(f"Training complete! Best Val F1: {best_f1:.4f}")
