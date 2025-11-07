@@ -22,13 +22,17 @@ from tqdm.auto import tqdm
 import google.generativeai as genai
 from typing import Dict, Any, Tuple, Optional
 from concurrent.futures import ThreadPoolExecutor
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # ============================================================================
 # CONFIGURATION - EDIT THESE VALUES
 # ============================================================================
 
-# API Configuration
-GEMINI_API_KEY = "AIzaSyAZLxkZf067zZ5UTAoGy_JQjVjvYMatDNo"  # ← CHANGE THIS!
+# API Configuration (loaded from .env file)
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = "gemini-2.5-flash"  # Use the latest stable model
 
 # File Paths

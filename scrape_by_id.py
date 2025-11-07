@@ -19,15 +19,19 @@ import time
 import requests
 from tqdm import tqdm
 from urllib.parse import urlparse
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # ============================================================================
 # CONFIGURATION - EDIT THESE VALUES
 # ============================================================================
 
-# Reddit API Credentials
-REDDIT_CLIENT_ID = "ML_aby_GTgeEFA2tyA8ryw"
-REDDIT_CLIENT_SECRET = "KcHW88TKXNFgI2FyQYvPUy-ByOB1-g"
-REDDIT_USER_AGENT = "BrawlStars Sentiment Scraper v3.0 by /u/YOUR_USERNAME"
+# Reddit API Credentials (loaded from .env file)
+REDDIT_CLIENT_ID = os.getenv("REDDIT_CLIENT_ID")
+REDDIT_CLIENT_SECRET = os.getenv("REDDIT_CLIENT_SECRET")
+REDDIT_USER_AGENT = os.getenv("REDDIT_USER_AGENT")
 
 # File Paths
 DATA_DIR = "data"

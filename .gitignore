@@ -1,3 +1,6 @@
+# Environment variables (contains API keys and secrets)
+.env
+
 # Data directories
 data/
 media/
