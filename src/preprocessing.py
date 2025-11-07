@@ -325,11 +325,12 @@ class ImagePreprocessor:
 
     def get_zero_image(self) -> np.ndarray:
         """Returns a zero-filled image (for missing modality)."""
+        zero_img = np.zeros((*self.target_size, 3), dtype=np.float32)
         if self.normalize:
-            # Return normalized zero image
-            return -self.mean / self.std
+            # Apply normalization (broadcasting will handle dimensions)
+            return (zero_img - self.mean) / self.std
         else:
-            return np.zeros((*self.target_size, 3), dtype=np.float32)
+            return zero_img
 
 
 class VideoPreprocessor:
@@ -473,7 +474,9 @@ class VideoPreprocessor:
 
     def get_zero_video(self) -> np.ndarray:
         """Returns a zero-filled video representation (for missing modality)."""
+        zero_frame = np.zeros((*self.target_size, 3), dtype=np.float32)
         if self.normalize:
-            return -self.mean / self.std
+            # Apply normalization (broadcasting will handle dimensions)
+            return (zero_frame - self.mean) / self.std
         else:
-            return np.zeros((*self.target_size, 3), dtype=np.float32)
+            return zero_frame
