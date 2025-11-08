@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import datetime as dt
+import os
 from sentiment_timeseries import render_sentiment_trend
 from sentiment_engagement import render_sentiment_engagement
 
@@ -13,7 +14,10 @@ st.set_page_config(
 
 @st.cache_data
 def load_data():
-    df = pd.read_csv("./sentiment_labelled.csv")
+    # Get the directory where Dashboard.py is located
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    csv_path = os.path.join(script_dir, "sentiment_labelled.csv")
+    df = pd.read_csv(csv_path)
     return df
 
 # load data
