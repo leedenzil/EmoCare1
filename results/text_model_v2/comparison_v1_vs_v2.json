@@ -1,0 +1,94 @@
+{
+  "v1": {
+    "overall": {
+      "accuracy": 0.6464,
+      "weighted_f1": 0.632753577893655,
+      "loss": 1.001831367611885
+    },
+    "per_class": {
+      "Anger": {
+        "precision": 0.6871165644171779,
+        "recall": 0.6746987951807228,
+        "f1_score": 0.6808510638297872,
+        "support": 166
+      },
+      "Joy": {
+        "precision": 0.634020618556701,
+        "recall": 0.6758241758241759,
+        "f1_score": 0.6542553191489362,
+        "support": 182
+      },
+      "Neutral/Other": {
+        "precision": 0.6551724137931034,
+        "recall": 0.7676767676767676,
+        "f1_score": 0.7069767441860465,
+        "support": 198
+      },
+      "Sadness": {
+        "precision": 0.4117647058823529,
+        "recall": 0.21212121212121213,
+        "f1_score": 0.28,
+        "support": 33
+      },
+      "Surprise": {
+        "precision": 0.5263157894736842,
+        "recall": 0.21739130434782608,
+        "f1_score": 0.3076923076923077,
+        "support": 46
+      }
+    }
+  },
+  "v2": {
+    "version": "v2",
+    "improvements": [
+      "Class weights",
+      "Label smoothing (0.1)",
+      "Gradient clipping (1.0)",
+      "Early stopping (patience=3)",
+      "ReduceLROnPlateau scheduler"
+    ],
+    "overall": {
+      "accuracy": 0.6151351351351352,
+      "weighted_f1": 0.6230167293312194,
+      "loss": 1.4645972868491863,
+      "best_epoch": 3,
+      "total_epochs": 6
+    },
+    "per_class": {
+      "Anger": {
+        "precision": 0.6810344827586207,
+        "recall": 0.6448979591836734,
+        "f1_score": 0.6624737945492662,
+        "support": 245
+      },
+      "Joy": {
+        "precision": 0.6650717703349283,
+        "recall": 0.5815899581589958,
+        "f1_score": 0.6205357142857143,
+        "support": 239
+      },
+      "Neutral/Other": {
+        "precision": 0.7047619047619048,
+        "recall": 0.6809815950920245,
+        "f1_score": 0.6926677067082684,
+        "support": 326
+      },
+      "Sadness": {
+        "precision": 0.27522935779816515,
+        "recall": 0.5769230769230769,
+        "f1_score": 0.37267080745341613,
+        "support": 52
+      },
+      "Surprise": {
+        "precision": 0.3333333333333333,
+        "recall": 0.31746031746031744,
+        "f1_score": 0.3252032520325203,
+        "support": 63
+      }
+    }
+  },
+  "improvements": {
+    "accuracy_change": -0.031264864864864794,
+    "f1_change": -0.009736848562435618
+  }
+}
