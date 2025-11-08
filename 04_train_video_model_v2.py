@@ -41,10 +41,260 @@ import random
 from tqdm import tqdm
 warnings.filterwarnings('ignore')
 
+# =============================================================================
+# CONSTANTS
+# =============================================================================
+RANDOM_SEED = 42
+TRAIN_DATA = "data/train_set.csv"
+VAL_DATA = "data/validation_set.csv"
+MODEL_DIR = "models"
+RESULTS_DIR = "results/video_model_v2"
+MODEL_NAME = 'openai/clip-vit-base-patch32'
+BATCH_SIZE = 8
+EPOCHS = 15
+LEARNING_RATE = 1e-5
+NUM_FRAMES = 12
+LABEL_SMOOTHING = 0.1
+GRADIENT_CLIP_NORM = 1.0
+EARLY_STOP_PATIENCE = 5
+LR_SCHEDULER_PATIENCE = 3
+LR_SCHEDULER_FACTOR = 0.5
+LABELS = ['Anger', 'Joy', 'Neutral/Other', 'Sadness', 'Surprise']
+LABEL_TO_ID = {label: idx for idx, label in enumerate(LABELS)}
+ID_TO_LABEL = {idx: label for label, idx in LABEL_TO_ID.items()}
 
+# =============================================================================
+# FUNCTION AND CLASS DEFINITIONS (must be at module level for multiprocessing)
+# =============================================================================
+def extract_frames(video_path, num_frames=12, augment=False):
+    """
+    Extract frames from video with optional temporal augmentation.
+
+    Augmentation adds randomness to frame sampling for training diversity.
+    """
+    try:
+        cap = cv2.VideoCapture(video_path)
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
+        if total_frames == 0:
+            cap.release()
+            return None
+
+        if augment and total_frames > num_frames * 2:
+            # Random temporal offset for augmentation
+            max_offset = total_frames - num_frames * 2
+            offset = random.randint(0, max_offset)
+
+            # Sample with random jitter
+            base_indices = np.linspace(offset, total_frames - offset - 1, num_frames, dtype=int)
+            jitter = np.random.randint(-2, 3, size=num_frames)  # ±2 frames jitter
+            frame_indices = np.clip(base_indices + jitter, 0, total_frames - 1)
+        else:
+            # Normal evenly-spaced sampling
+            frame_indices = np.linspace(0, total_frames - 1, num_frames, dtype=int)
+
+        frames = []
+        for idx in frame_indices:
+            cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
+            ret, frame = cap.read()
+
+            if ret:
+                frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                pil_image = Image.fromarray(frame_rgb)
+                frames.append(pil_image)
+
+        cap.release()
+
+        # Pad if needed
+        if len(frames) < num_frames:
+            while len(frames) < num_frames:
+                frames.append(frames[-1] if frames else Image.new('RGB', (224, 224), color='black'))
+
+        return frames[:num_frames]
+
+    except Exception as e:
+        print(f"Error extracting frames from {video_path}: {e}")
+        return None
+
+
+class BrawlStarsVideoDataset(Dataset):
+    def __init__(self, dataframe, processor, num_frames=12, augment=False):
+        self.data = dataframe.reset_index(drop=True)
+        self.processor = processor
+        self.num_frames = num_frames
+        self.augment = augment
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        row = self.data.iloc[idx]
+        video_path = str(row['local_media_path']).replace('\\', '/')
+
+        # Extract frames with optional augmentation
+        frames = extract_frames(video_path, self.num_frames, augment=self.augment)
+
+        if frames is None or len(frames) == 0:
+            frames = [Image.new('RGB', (224, 224), color='black') for _ in range(self.num_frames)]
+
+        # Process all frames
+        pixel_values_list = []
+        for frame in frames:
+            inputs = self.processor(images=frame, return_tensors="pt")
+            pixel_values_list.append(inputs['pixel_values'].squeeze(0))
+
+        pixel_values = torch.stack(pixel_values_list)
+        label = LABEL_TO_ID[row['post_sentiment']]
+
+        return {
+            'pixel_values': pixel_values,
+            'label': torch.tensor(label, dtype=torch.long)
+        }
+
+
+class VideoSentimentClassifier(nn.Module):
+    def __init__(self, n_classes=5, num_frames=12):
+        super(VideoSentimentClassifier, self).__init__()
+        self.clip = CLIPModel.from_pretrained(MODEL_NAME)
+        self.num_frames = num_frames
+        self.vision_embed_dim = self.clip.vision_model.config.hidden_size
+
+        # Temporal aggregation (attention-based)
+        self.temporal_attention = nn.Sequential(
+            nn.Linear(self.vision_embed_dim, 128),
+            nn.Tanh(),
+            nn.Linear(128, 1)
+        )
+
+        # Classification head
+        self.classifier = nn.Sequential(
+            nn.Dropout(0.3),
+            nn.Linear(self.vision_embed_dim, 256),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(256, n_classes)
+        )
+
+    def forward(self, pixel_values):
+        batch_size, num_frames, C, H, W = pixel_values.shape
+        pixel_values = pixel_values.view(batch_size * num_frames, C, H, W)
+
+        vision_outputs = self.clip.vision_model(pixel_values=pixel_values)
+        frame_embeds = vision_outputs.pooler_output
+        frame_embeds = frame_embeds.view(batch_size, num_frames, -1)
+
+        attention_scores = self.temporal_attention(frame_embeds)
+        attention_weights = torch.softmax(attention_scores, dim=1)
+        video_embed = torch.sum(frame_embeds * attention_weights, dim=1)
+
+        logits = self.classifier(video_embed)
+        return logits
+
+    def get_embedding(self, pixel_values):
+        with torch.no_grad():
+            batch_size, num_frames, C, H, W = pixel_values.shape
+            pixel_values = pixel_values.view(batch_size * num_frames, C, H, W)
+
+            vision_outputs = self.clip.vision_model(pixel_values=pixel_values)
+            frame_embeds = vision_outputs.pooler_output
+            frame_embeds = frame_embeds.view(batch_size, num_frames, -1)
+
+            attention_scores = self.temporal_attention(frame_embeds)
+            attention_weights = torch.softmax(attention_scores, dim=1)
+            video_embed = torch.sum(frame_embeds * attention_weights, dim=1)
+
+        return video_embed
+
+
+class LabelSmoothingCrossEntropy(nn.Module):
+    def __init__(self, weight=None, smoothing=0.1):
+        super().__init__()
+        self.smoothing = smoothing
+        self.weight = weight
+
+    def forward(self, pred, target):
+        n_classes = pred.size(-1)
+        log_pred = torch.log_softmax(pred, dim=-1)
+
+        with torch.no_grad():
+            true_dist = torch.zeros_like(log_pred)
+            true_dist.fill_(self.smoothing / (n_classes - 1))
+            true_dist.scatter_(1, target.unsqueeze(1), 1.0 - self.smoothing)
+
+        if self.weight is not None:
+            true_dist = true_dist * self.weight.unsqueeze(0)
+
+        return torch.mean(torch.sum(-true_dist * log_pred, dim=-1))
+
+
+def train_epoch(model, dataloader, criterion, optimizer, device):
+    model.train()
+    total_loss = 0
+    correct_predictions = 0
+    total_samples = 0
+
+    progress_bar = tqdm(dataloader, desc='Training')
+    for batch in progress_bar:
+        pixel_values = batch['pixel_values'].to(device)
+        labels = batch['label'].to(device)
+
+        outputs = model(pixel_values)
+        loss = criterion(outputs, labels)
+
+        optimizer.zero_grad()
+        loss.backward()
+
+        # Gradient clipping
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=GRADIENT_CLIP_NORM)
+
+        optimizer.step()
+
+        _, preds = torch.max(outputs, dim=1)
+        correct_predictions += torch.sum(preds == labels).item()
+        total_samples += labels.size(0)
+        total_loss += loss.item()
+
+        progress_bar.set_postfix({
+            'loss': f'{loss.item():.4f}',
+            'acc': f'{correct_predictions/total_samples:.4f}'
+        })
+
+    return total_loss / len(dataloader), correct_predictions / total_samples
+
+
+def eval_model(model, dataloader, criterion, device):
+    model.eval()
+    total_loss = 0
+    all_preds = []
+    all_labels = []
+
+    with torch.no_grad():
+        progress_bar = tqdm(dataloader, desc='Validation')
+        for batch in progress_bar:
+            pixel_values = batch['pixel_values'].to(device)
+            labels = batch['label'].to(device)
+
+            outputs = model(pixel_values)
+            loss = criterion(outputs, labels)
+
+            _, preds = torch.max(outputs, dim=1)
+
+            all_preds.extend(preds.cpu().numpy())
+            all_labels.extend(labels.cpu().numpy())
+            total_loss += loss.item()
+
+    avg_loss = total_loss / len(dataloader)
+    accuracy = accuracy_score(all_labels, all_preds)
+    f1 = f1_score(all_labels, all_preds, average='weighted')
+
+    return avg_loss, accuracy, f1, all_preds, all_labels
+
+
+# =============================================================================
+# MAIN EXECUTION FUNCTION
+# =============================================================================
 def main():
     # Set random seeds
-    RANDOM_SEED = 42
     torch.manual_seed(RANDOM_SEED)
     np.random.seed(RANDOM_SEED)
     random.seed(RANDOM_SEED)
@@ -56,36 +306,9 @@ def main():
         print(f"GPU: {torch.cuda.get_device_name(0)}")
         print(f"GPU Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB")
 
-    # =============================================================================
-    # CONFIGURATION
-    # =============================================================================
-    TRAIN_DATA = "data/train_set.csv"
-    VAL_DATA = "data/validation_set.csv"
-    MODEL_DIR = "models"
-    RESULTS_DIR = "results/video_model_v2"
-
     # Create directories
     Path(MODEL_DIR).mkdir(parents=True, exist_ok=True)
     Path(RESULTS_DIR).mkdir(parents=True, exist_ok=True)
-
-    # Model configuration
-    MODEL_NAME = 'openai/clip-vit-base-patch32'
-    BATCH_SIZE = 8
-    EPOCHS = 15
-    LEARNING_RATE = 1e-5
-    NUM_FRAMES = 12  # Increased from 8
-
-    # Training improvements
-    LABEL_SMOOTHING = 0.1
-    GRADIENT_CLIP_NORM = 1.0
-    EARLY_STOP_PATIENCE = 5
-    LR_SCHEDULER_PATIENCE = 3
-    LR_SCHEDULER_FACTOR = 0.5
-
-    # Sentiment labels
-    LABELS = ['Anger', 'Joy', 'Neutral/Other', 'Sadness', 'Surprise']
-    LABEL_TO_ID = {label: idx for idx, label in enumerate(LABELS)}
-    ID_TO_LABEL = {idx: label for label, idx in LABEL_TO_ID.items()}
 
     print("\n" + "="*80)
     print("VIDEO MODEL v2 CONFIGURATION")
@@ -160,95 +383,8 @@ def main():
     print("   With balanced weights, model will learn these classes.")
 
     # =============================================================================
-    # TEMPORAL AUGMENTATION FUNCTIONS
+    # CREATE DATASETS AND DATALOADERS
     # =============================================================================
-    def extract_frames(video_path, num_frames=12, augment=False):
-        """
-        Extract frames from video with optional temporal augmentation.
-
-        Augmentation adds randomness to frame sampling for training diversity.
-        """
-        try:
-            cap = cv2.VideoCapture(video_path)
-            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-
-            if total_frames == 0:
-                cap.release()
-                return None
-
-            if augment and total_frames > num_frames * 2:
-                # Random temporal offset for augmentation
-                max_offset = total_frames - num_frames * 2
-                offset = random.randint(0, max_offset)
-
-                # Sample with random jitter
-                base_indices = np.linspace(offset, total_frames - offset - 1, num_frames, dtype=int)
-                jitter = np.random.randint(-2, 3, size=num_frames)  # ±2 frames jitter
-                frame_indices = np.clip(base_indices + jitter, 0, total_frames - 1)
-            else:
-                # Normal evenly-spaced sampling
-                frame_indices = np.linspace(0, total_frames - 1, num_frames, dtype=int)
-
-            frames = []
-            for idx in frame_indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, frame = cap.read()
-
-                if ret:
-                    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    pil_image = Image.fromarray(frame_rgb)
-                    frames.append(pil_image)
-
-            cap.release()
-
-            # Pad if needed
-            if len(frames) < num_frames:
-                while len(frames) < num_frames:
-                    frames.append(frames[-1] if frames else Image.new('RGB', (224, 224), color='black'))
-
-            return frames[:num_frames]
-
-        except Exception as e:
-            print(f"Error extracting frames from {video_path}: {e}")
-            return None
-
-    # =============================================================================
-    # DATASET AND DATALOADER
-    # =============================================================================
-    class BrawlStarsVideoDataset(Dataset):
-        def __init__(self, dataframe, processor, num_frames=12, augment=False):
-            self.data = dataframe.reset_index(drop=True)
-            self.processor = processor
-            self.num_frames = num_frames
-            self.augment = augment
-
-        def __len__(self):
-            return len(self.data)
-
-        def __getitem__(self, idx):
-            row = self.data.iloc[idx]
-            video_path = str(row['local_media_path']).replace('\\', '/')
-
-            # Extract frames with optional augmentation
-            frames = extract_frames(video_path, self.num_frames, augment=self.augment)
-
-            if frames is None or len(frames) == 0:
-                frames = [Image.new('RGB', (224, 224), color='black') for _ in range(self.num_frames)]
-
-            # Process all frames
-            pixel_values_list = []
-            for frame in frames:
-                inputs = self.processor(images=frame, return_tensors="pt")
-                pixel_values_list.append(inputs['pixel_values'].squeeze(0))
-
-            pixel_values = torch.stack(pixel_values_list)
-            label = LABEL_TO_ID[row['post_sentiment']]
-
-            return {
-                'pixel_values': pixel_values,
-                'label': torch.tensor(label, dtype=torch.long)
-            }
-
     print("\n" + "="*80)
     print("CREATING DATASETS AND DATALOADERS")
     print("="*80)
@@ -257,7 +393,7 @@ def main():
     print("Loading CLIP processor...")
     processor = CLIPProcessor.from_pretrained(MODEL_NAME)
 
-    # Create datasets
+    # Create datasets (using module-level classes)
     train_dataset = BrawlStarsVideoDataset(train_df, processor, NUM_FRAMES, augment=True)
     val_dataset = BrawlStarsVideoDataset(val_df, processor, NUM_FRAMES, augment=False)
 
@@ -287,62 +423,8 @@ def main():
     print(f"✓ Multiprocessing enabled (num_workers=4) for better GPU utilization")
 
     # =============================================================================
-    # MODEL DEFINITION
+    # INITIALIZE MODEL
     # =============================================================================
-    class VideoSentimentClassifier(nn.Module):
-        def __init__(self, n_classes=5, num_frames=12):
-            super(VideoSentimentClassifier, self).__init__()
-            self.clip = CLIPModel.from_pretrained(MODEL_NAME)
-            self.num_frames = num_frames
-            self.vision_embed_dim = self.clip.vision_model.config.hidden_size
-
-            # Temporal aggregation (attention-based)
-            self.temporal_attention = nn.Sequential(
-                nn.Linear(self.vision_embed_dim, 128),
-                nn.Tanh(),
-                nn.Linear(128, 1)
-            )
-
-            # Classification head
-            self.classifier = nn.Sequential(
-                nn.Dropout(0.3),
-                nn.Linear(self.vision_embed_dim, 256),
-                nn.ReLU(),
-                nn.Dropout(0.2),
-                nn.Linear(256, n_classes)
-            )
-
-        def forward(self, pixel_values):
-            batch_size, num_frames, C, H, W = pixel_values.shape
-            pixel_values = pixel_values.view(batch_size * num_frames, C, H, W)
-
-            vision_outputs = self.clip.vision_model(pixel_values=pixel_values)
-            frame_embeds = vision_outputs.pooler_output
-            frame_embeds = frame_embeds.view(batch_size, num_frames, -1)
-
-            attention_scores = self.temporal_attention(frame_embeds)
-            attention_weights = torch.softmax(attention_scores, dim=1)
-            video_embed = torch.sum(frame_embeds * attention_weights, dim=1)
-
-            logits = self.classifier(video_embed)
-            return logits
-
-        def get_embedding(self, pixel_values):
-            with torch.no_grad():
-                batch_size, num_frames, C, H, W = pixel_values.shape
-                pixel_values = pixel_values.view(batch_size * num_frames, C, H, W)
-
-                vision_outputs = self.clip.vision_model(pixel_values=pixel_values)
-                frame_embeds = vision_outputs.pooler_output
-                frame_embeds = frame_embeds.view(batch_size, num_frames, -1)
-
-                attention_scores = self.temporal_attention(frame_embeds)
-                attention_weights = torch.softmax(attention_scores, dim=1)
-                video_embed = torch.sum(frame_embeds * attention_weights, dim=1)
-
-            return video_embed
-
-    print("\n" + "="*80)
     print("INITIALIZING MODEL")
     print("="*80)
 
@@ -358,26 +440,6 @@ def main():
     # =============================================================================
     # TRAINING SETUP
     # =============================================================================
-    class LabelSmoothingCrossEntropy(nn.Module):
-        def __init__(self, weight=None, smoothing=0.1):
-            super().__init__()
-            self.smoothing = smoothing
-            self.weight = weight
-
-        def forward(self, pred, target):
-            n_classes = pred.size(-1)
-            log_pred = torch.log_softmax(pred, dim=-1)
-
-            with torch.no_grad():
-                true_dist = torch.zeros_like(log_pred)
-                true_dist.fill_(self.smoothing / (n_classes - 1))
-                true_dist.scatter_(1, target.unsqueeze(1), 1.0 - self.smoothing)
-
-            if self.weight is not None:
-                true_dist = true_dist * self.weight.unsqueeze(0)
-
-            return torch.mean(torch.sum(-true_dist * log_pred, dim=-1))
-
     criterion = LabelSmoothingCrossEntropy(weight=class_weights_tensor, smoothing=LABEL_SMOOTHING)
     optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE, weight_decay=0.01)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
@@ -391,69 +453,6 @@ def main():
 
     # =============================================================================
     # TRAINING FUNCTIONS
-    # =============================================================================
-    def train_epoch(model, dataloader, criterion, optimizer, device):
-        model.train()
-        total_loss = 0
-        correct_predictions = 0
-        total_samples = 0
-
-        progress_bar = tqdm(dataloader, desc='Training')
-        for batch in progress_bar:
-            pixel_values = batch['pixel_values'].to(device)
-            labels = batch['label'].to(device)
-
-            outputs = model(pixel_values)
-            loss = criterion(outputs, labels)
-
-            optimizer.zero_grad()
-            loss.backward()
-
-            # Gradient clipping
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=GRADIENT_CLIP_NORM)
-
-            optimizer.step()
-
-            _, preds = torch.max(outputs, dim=1)
-            correct_predictions += torch.sum(preds == labels).item()
-            total_samples += labels.size(0)
-            total_loss += loss.item()
-
-            progress_bar.set_postfix({
-                'loss': f'{loss.item():.4f}',
-                'acc': f'{correct_predictions/total_samples:.4f}'
-            })
-
-        return total_loss / len(dataloader), correct_predictions / total_samples
-
-
-    def eval_model(model, dataloader, criterion, device):
-        model.eval()
-        total_loss = 0
-        all_preds = []
-        all_labels = []
-
-        with torch.no_grad():
-            progress_bar = tqdm(dataloader, desc='Validation')
-            for batch in progress_bar:
-                pixel_values = batch['pixel_values'].to(device)
-                labels = batch['label'].to(device)
-
-                outputs = model(pixel_values)
-                loss = criterion(outputs, labels)
-
-                _, preds = torch.max(outputs, dim=1)
-
-                all_preds.extend(preds.cpu().numpy())
-                all_labels.extend(labels.cpu().numpy())
-                total_loss += loss.item()
-
-        avg_loss = total_loss / len(dataloader)
-        accuracy = accuracy_score(all_labels, all_preds)
-        f1 = f1_score(all_labels, all_preds, average='weighted')
-
-        return avg_loss, accuracy, f1, all_preds, all_labels
-
     # =============================================================================
     # TRAINING LOOP
     # =============================================================================
