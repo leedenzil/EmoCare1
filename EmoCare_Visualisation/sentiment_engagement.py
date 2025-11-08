@@ -75,7 +75,7 @@ def render_sentiment_engagement(df, color_map, start_date=None, end_date=None, s
         bargap=0.4,          
         uniformtext=dict(mode='hide', minsize=12),
         bargroupgap=0,     
-        yaxis=dict(range=[0, y_max], tickfont=dict(size=13), titlefont=dict(size=14)),
+        yaxis=dict(range=[0, y_max], tickfont=dict(size=13), title=dict(font=dict(size=14))),
         xaxis=dict(
             tickfont=dict(size=1),  
             title=dict(text='Sentiment', font=dict(size=14), standoff=70),
