@@ -221,10 +221,14 @@ class LabelSmoothingCrossEntropy(nn.Module):
             true_dist.fill_(self.smoothing / (n_classes - 1))
             true_dist.scatter_(1, target.unsqueeze(1), 1.0 - self.smoothing)
 
-        if self.weight is not None:
-            true_dist = true_dist * self.weight.unsqueeze(0)
+        # Compute loss per sample
+        loss = torch.sum(-true_dist * log_pred, dim=-1)
 
-        return torch.mean(torch.sum(-true_dist * log_pred, dim=-1))
+        # Apply class weights to each sample based on its target class
+        if self.weight is not None:
+            loss = loss * self.weight[target]
+
+        return torch.mean(loss)
 
 
 def train_epoch(model, dataloader, criterion, optimizer, device):
