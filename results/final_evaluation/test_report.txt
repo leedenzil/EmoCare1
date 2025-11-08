@@ -1,0 +1,22 @@
+FINAL TEST SET EVALUATION REPORT
+================================================================================
+
+Multimodal Sentiment Analysis System
+Brawl Stars Reddit Posts
+
+Test Set Size: 625 samples
+Overall Accuracy: 0.5936 (59.36%)
+Weighted F1 Score: 0.5818
+
+Classification Report:
+               precision    recall  f1-score   support
+
+        Anger     0.6294    0.6446    0.6369       166
+          Joy     0.6049    0.6813    0.6408       182
+Neutral/Other     0.6287    0.6414    0.6350       198
+      Sadness     0.3750    0.0909    0.1463        33
+     Surprise     0.2500    0.2174    0.2326        46
+
+     accuracy                         0.5936       625
+    macro avg     0.4976    0.4551    0.4583       625
+ weighted avg     0.5807    0.5936    0.5818       625
