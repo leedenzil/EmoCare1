@@ -476,24 +476,32 @@ def main():
     val_dataset = BrawlStarsImageDataset(val_df, processor, augment=False)
 
     # Create dataloaders
+    # Python scripts handle multiprocessing better than Jupyter notebooks on Windows
     train_loader = DataLoader(
         train_dataset,
         batch_size=BATCH_SIZE,
         shuffle=True,
-        num_workers=0,          # Windows-safe
-        pin_memory=True
+        num_workers=4,          # 4 parallel workers (works in .py, not in notebooks!)
+        pin_memory=True,
+        prefetch_factor=2,      # Preload 2 batches per worker
+        persistent_workers=True # Keep workers alive between epochs
     )
 
     val_loader = DataLoader(
         val_dataset,
         batch_size=BATCH_SIZE,
         shuffle=False,
-        num_workers=0,
-        pin_memory=True
+        num_workers=2,          # 2 workers for validation
+        pin_memory=True,
+        persistent_workers=True
     )
 
     print(f"✓ Created {len(train_loader)} train batches and {len(val_loader)} validation batches")
-    print(f"✓ Windows-optimized: batch_size={BATCH_SIZE}, pin_memory=True")
+    print(f"🚀 Optimized for .py execution:")
+    print(f"   - batch_size={BATCH_SIZE}")
+    print(f"   - num_workers=4 (parallel data loading)")
+    print(f"   - pin_memory=True + prefetch_factor=2")
+    print(f"   Expected GPU usage: 70-90%!")
 
     # Initialize model
     print(f"\nInitializing model...")
