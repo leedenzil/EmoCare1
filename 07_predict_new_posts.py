@@ -29,6 +29,7 @@ from pathlib import Path
 from datetime import datetime
 import argparse
 from dotenv import load_dotenv
+import time
 
 # Load environment variables
 load_dotenv()
@@ -214,6 +215,33 @@ def extract_frames(video_path, num_frames=8):
         return frames[:num_frames]
     except:
         return None
+
+
+def save_csv_with_retry(df, file_path, max_retries=3):
+    """Save CSV with retry logic for file locking issues (common on Windows)."""
+    for attempt in range(max_retries):
+        try:
+            df.to_csv(file_path, index=False)
+            return True
+        except PermissionError:
+            if attempt < max_retries - 1:
+                print(f"\n⚠ File is locked. Retrying in 2 seconds... (Attempt {attempt + 1}/{max_retries})")
+                time.sleep(2)
+            else:
+                print(f"\n✗ ERROR: Could not save to {file_path}")
+                print(f"  The file is locked by another program (Excel, text editor, or dashboard).")
+                print(f"  Please close the file and run the script again.")
+                print(f"\n  Alternatively, save predictions to a temporary file:")
+                temp_file = file_path.replace('.csv', f'_temp_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv')
+                try:
+                    df.to_csv(temp_file, index=False)
+                    print(f"  ✓ Saved to temporary file: {temp_file}")
+                    print(f"  Merge this file manually or close the locked file and re-run.")
+                    return False
+                except Exception as e:
+                    print(f"  ✗ Could not save temporary file: {e}")
+                    return False
+    return False
 
 
 def scrape_new_posts(num_posts=100):
@@ -410,13 +438,22 @@ def main():
 
         if len(new_posts_df) > 0:
             combined_df = pd.concat([existing_df, new_posts_df], ignore_index=True)
-            combined_df.to_csv(OUTPUT_CSV, index=False)
-            print(f"\n✓ Added {len(new_posts_df)} new posts to {OUTPUT_CSV}")
+
+            # Save with retry logic
+            if save_csv_with_retry(combined_df, OUTPUT_CSV):
+                print(f"\n✓ Added {len(new_posts_df)} new posts to {OUTPUT_CSV}")
+            else:
+                print(f"\n⚠ Predictions completed but file could not be saved.")
+                return
         else:
             print(f"\n✓ No new posts to add (all already exist in dataset)")
     else:
-        new_posts_df.to_csv(OUTPUT_CSV, index=False)
-        print(f"\n✓ Created new dataset with {len(new_posts_df)} posts at {OUTPUT_CSV}")
+        # Save with retry logic
+        if save_csv_with_retry(new_posts_df, OUTPUT_CSV):
+            print(f"\n✓ Created new dataset with {len(new_posts_df)} posts at {OUTPUT_CSV}")
+        else:
+            print(f"\n⚠ Predictions completed but file could not be saved.")
+            return
 
     # Print sentiment distribution
     print("\nSentiment Distribution:")
