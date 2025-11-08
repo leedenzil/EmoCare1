@@ -14,14 +14,56 @@ st.set_page_config(
 
 @st.cache_data
 def load_data():
+    """Load sentiment data, handling missing or empty CSV files."""
     # Get the directory where Dashboard.py is located
     script_dir = os.path.dirname(os.path.abspath(__file__))
     csv_path = os.path.join(script_dir, "sentiment_labelled.csv")
-    df = pd.read_csv(csv_path)
-    return df
+
+    # Check if file exists
+    if not os.path.exists(csv_path):
+        # Create empty DataFrame with proper columns
+        return pd.DataFrame(columns=[
+            'id', 'title', 'text', 'url', 'permalink', 'score',
+            'created_utc', 'post_hint', 'local_media_path', 'post_sentiment',
+            'post_classification', 'sentiment_analysis', 'labeling_error'
+        ])
+
+    try:
+        df = pd.read_csv(csv_path)
+        # Handle empty CSV file
+        if len(df) == 0:
+            return pd.DataFrame(columns=[
+                'id', 'title', 'text', 'url', 'permalink', 'score',
+                'created_utc', 'post_hint', 'local_media_path', 'post_sentiment',
+                'post_classification', 'sentiment_analysis', 'labeling_error'
+            ])
+        return df
+    except pd.errors.EmptyDataError:
+        # File exists but is completely empty
+        return pd.DataFrame(columns=[
+            'id', 'title', 'text', 'url', 'permalink', 'score',
+            'created_utc', 'post_hint', 'local_media_path', 'post_sentiment',
+            'post_classification', 'sentiment_analysis', 'labeling_error'
+        ])
 
 # load data
 df = load_data()
+
+# Check if we have data
+if len(df) == 0:
+    st.title("EmoCare1 - Sentiment Dashboard")
+    st.warning("📊 No sentiment data available yet")
+    st.info("""
+    **Get started by collecting sentiment data:**
+
+    Run the prediction script to scrape and analyze Reddit posts:
+    ```
+    python 07_predict_new_posts.py --num_posts 100
+    ```
+
+    Once data is collected, refresh this dashboard to see the visualizations.
+    """)
+    st.stop()
 
 # Load CSS file (if exists)
 def local_css(file_name):

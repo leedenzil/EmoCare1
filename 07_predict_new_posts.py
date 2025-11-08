@@ -437,9 +437,23 @@ def main():
     new_posts_df['sentiment_analysis'] = ''
     new_posts_df['labeling_error'] = ''
 
+    # Ensure output directory exists
+    os.makedirs(os.path.dirname(OUTPUT_CSV), exist_ok=True)
+
     # Load existing data and append
+    existing_df = None
     if os.path.exists(OUTPUT_CSV):
-        existing_df = pd.read_csv(OUTPUT_CSV)
+        try:
+            existing_df = pd.read_csv(OUTPUT_CSV)
+            # Handle empty CSV file
+            if len(existing_df) == 0:
+                print("  Found empty CSV file, will create with proper columns")
+                existing_df = None
+        except pd.errors.EmptyDataError:
+            print("  Found empty CSV file, will create with proper columns")
+            existing_df = None
+
+    if existing_df is not None and len(existing_df) > 0:
         # Remove duplicates by ID
         existing_ids = set(existing_df['id'])
         new_posts_df = new_posts_df[~new_posts_df['id'].isin(existing_ids)]
@@ -456,7 +470,7 @@ def main():
         else:
             print(f"\n✓ No new posts to add (all already exist in dataset)")
     else:
-        # Save with retry logic
+        # Save with retry logic (creates new file with proper columns)
         if save_csv_with_retry(new_posts_df, OUTPUT_CSV):
             print(f"\n✓ Created new dataset with {len(new_posts_df)} posts at {OUTPUT_CSV}")
         else:
