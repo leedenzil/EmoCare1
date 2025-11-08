@@ -256,8 +256,14 @@ def scrape_new_posts(num_posts=100):
 
     subreddit = reddit.subreddit('BrawlStars')
     posts_data = []
+    skipped_galleries = 0
 
     for post in subreddit.new(limit=num_posts):
+        # Skip gallery posts (not included in training data)
+        if hasattr(post, 'is_gallery') and post.is_gallery:
+            skipped_galleries += 1
+            continue
+
         # Determine media type and URL
         media_path = None
         post_hint = post.post_hint if hasattr(post, 'post_hint') else None
@@ -283,6 +289,8 @@ def scrape_new_posts(num_posts=100):
 
     df = pd.DataFrame(posts_data)
     print(f"✓ Scraped {len(df)} posts")
+    if skipped_galleries > 0:
+        print(f"  (Skipped {skipped_galleries} gallery posts - not in training data)")
     return df
 
 
