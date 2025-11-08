@@ -1,0 +1,20 @@
+TEXT MODEL EVALUATION REPORT
+================================================================================
+
+Best Epoch: 3
+Validation Loss: 1.0018
+Validation Accuracy: 0.6464
+Validation Weighted F1: 0.6328
+
+Classification Report:
+               precision    recall  f1-score   support
+
+        Anger     0.6871    0.6747    0.6809       166
+          Joy     0.6340    0.6758    0.6543       182
+Neutral/Other     0.6552    0.7677    0.7070       198
+      Sadness     0.4118    0.2121    0.2800        33
+     Surprise     0.5263    0.2174    0.3077        46
+
+     accuracy                         0.6464       625
+    macro avg     0.5829    0.5095    0.5260       625
+ weighted avg     0.6352    0.6464    0.6328       625
