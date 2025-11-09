@@ -1,0 +1,97 @@
+{
+  "v1": {
+    "overall": {
+      "accuracy": 0.45665961945031713,
+      "weighted_f1": 0.4213120161774541,
+      "loss": 1.3192212462425232
+    },
+    "per_class": {
+      "Anger": {
+        "precision": 0.4875,
+        "recall": 0.3305084745762712,
+        "f1_score": 0.3939393939393939,
+        "support": 118
+      },
+      "Joy": {
+        "precision": 0.4303030303030303,
+        "recall": 0.5182481751824818,
+        "f1_score": 0.47019867549668876,
+        "support": 137
+      },
+      "Neutral/Other": {
+        "precision": 0.4649122807017544,
+        "recall": 0.6503067484662577,
+        "f1_score": 0.5421994884910486,
+        "support": 163
+      },
+      "Sadness": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1_score": 0.0,
+        "support": 27
+      },
+      "Surprise": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1_score": 0.0,
+        "support": 28
+      }
+    }
+  },
+  "v2": {
+    "version": "v2",
+    "improvements": [
+      "Class weights (Sadness/Surprise ~5x)",
+      "Data augmentation (rotation, flip, color jitter)",
+      "Label smoothing (0.1)",
+      "Gradient clipping (1.0)",
+      "Early stopping (patience=4)",
+      "ReduceLROnPlateau scheduler"
+    ],
+    "overall": {
+      "accuracy": 0.3672627235213205,
+      "weighted_f1": 0.39405010442770755,
+      "loss": 1.7440109823061072,
+      "best_epoch": 8,
+      "total_epochs": 12
+    },
+    "per_class": {
+      "Anger": {
+        "precision": 0.5030674846625767,
+        "recall": 0.4293193717277487,
+        "f1_score": 0.4632768361581921,
+        "support": 191
+      },
+      "Joy": {
+        "precision": 0.38095238095238093,
+        "recall": 0.2727272727272727,
+        "f1_score": 0.31788079470198677,
+        "support": 176
+      },
+      "Neutral/Other": {
+        "precision": 0.5572139303482587,
+        "recall": 0.4163568773234201,
+        "f1_score": 0.4765957446808511,
+        "support": 269
+      },
+      "Sadness": {
+        "precision": 0.11570247933884298,
+        "recall": 0.3111111111111111,
+        "f1_score": 0.1686746987951807,
+        "support": 45
+      },
+      "Surprise": {
+        "precision": 0.09482758620689655,
+        "recall": 0.2391304347826087,
+        "f1_score": 0.13580246913580246,
+        "support": 46
+      }
+    }
+  },
+  "improvements": {
+    "accuracy_change": -0.08939689592899663,
+    "f1_change": -0.02726191174974657,
+    "sadness_f1_change": 0.1686746987951807,
+    "surprise_f1_change": 0.13580246913580246
+  }
+}
