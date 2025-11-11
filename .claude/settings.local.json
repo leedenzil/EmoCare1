@@ -3,7 +3,10 @@
     "allow": [
       "Bash(pip install:*)",
       "Bash(conda install:*)",
-      "Bash(python -m pip install:*)"
+      "Bash(python -m pip install:*)",
+      "Bash(findstr:*)",
+      "Bash($null)",
+      "Bash(powershell -Command:*)"
     ],
     "deny": [],
     "ask": []
