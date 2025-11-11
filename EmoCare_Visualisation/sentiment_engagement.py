@@ -104,4 +104,4 @@ def render_sentiment_engagement(df, color_map, start_date=None, end_date=None, s
             align='center'
         )
 
-    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+    st.plotly_chart(fig, width='stretch', config={"displayModeBar": False})

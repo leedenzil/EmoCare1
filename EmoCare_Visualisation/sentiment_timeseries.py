@@ -92,7 +92,7 @@ def render_sentiment_trend(df, color_map, freq_option="Monthly"):
         font=dict(size=14)
     )
 
-    st.plotly_chart(fig, use_container_width=True, config={
+    st.plotly_chart(fig, width='stretch', config={
         'displayModeBar': False  
     })
     
