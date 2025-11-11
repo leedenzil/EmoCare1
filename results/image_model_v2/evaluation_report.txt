@@ -1,0 +1,28 @@
+IMAGE MODEL (CLIP) v2 EVALUATION REPORT
+================================================================================
+
+Improvements in v2:
+  - Class weights for severe imbalance (Sadness/Surprise ~5x)
+  - Data augmentation (rotation, flip, color jitter)
+  - Label smoothing (0.1)
+  - Gradient clipping (1.0)
+  - Early stopping (patience=4)
+  - ReduceLROnPlateau scheduler
+
+Best Epoch: 9
+Validation Loss: 1.7942
+Validation Accuracy: 0.4305
+Validation Weighted F1: 0.4324
+
+Classification Report:
+               precision    recall  f1-score   support
+
+        Anger     0.4791    0.5393    0.5074       191
+          Joy     0.3784    0.3182    0.3457       176
+Neutral/Other     0.5444    0.5019    0.5222       269
+      Sadness     0.1781    0.2889    0.2203        45
+     Surprise     0.1395    0.1304    0.1348        46
+
+     accuracy                         0.4305       727
+    macro avg     0.3439    0.3557    0.3461       727
+ weighted avg     0.4387    0.4305    0.4324       727

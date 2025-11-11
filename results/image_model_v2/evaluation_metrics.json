@@ -1,0 +1,50 @@
+{
+  "version": "v2",
+  "improvements": [
+    "Class weights (Sadness/Surprise ~5x)",
+    "Data augmentation (rotation, flip, color jitter)",
+    "Label smoothing (0.1)",
+    "Gradient clipping (1.0)",
+    "Early stopping (patience=4)",
+    "ReduceLROnPlateau scheduler"
+  ],
+  "overall": {
+    "accuracy": 0.4305364511691884,
+    "weighted_f1": 0.432396006388717,
+    "loss": 1.7941556572914124,
+    "best_epoch": 9,
+    "total_epochs": 12
+  },
+  "per_class": {
+    "Anger": {
+      "precision": 0.4790697674418605,
+      "recall": 0.5392670157068062,
+      "f1_score": 0.5073891625615764,
+      "support": 191
+    },
+    "Joy": {
+      "precision": 0.3783783783783784,
+      "recall": 0.3181818181818182,
+      "f1_score": 0.345679012345679,
+      "support": 176
+    },
+    "Neutral/Other": {
+      "precision": 0.5443548387096774,
+      "recall": 0.5018587360594795,
+      "f1_score": 0.5222437137330754,
+      "support": 269
+    },
+    "Sadness": {
+      "precision": 0.1780821917808219,
+      "recall": 0.28888888888888886,
+      "f1_score": 0.22033898305084745,
+      "support": 45
+    },
+    "Surprise": {
+      "precision": 0.13953488372093023,
+      "recall": 0.13043478260869565,
+      "f1_score": 0.1348314606741573,
+      "support": 46
+    }
+  }
+}

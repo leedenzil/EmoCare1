@@ -5,18 +5,18 @@ Multimodal Sentiment Analysis System
 Brawl Stars Reddit Posts
 
 Test Set Size: 925 samples
-Overall Accuracy: 0.6076 (60.76%)
-Weighted F1 Score: 0.6006
+Overall Accuracy: 0.5697 (56.97%)
+Weighted F1 Score: 0.5608
 
 Classification Report:
                precision    recall  f1-score   support
 
-        Anger     0.6087    0.6857    0.6449       245
-          Joy     0.6281    0.5230    0.5708       239
-Neutral/Other     0.6458    0.7270    0.6840       326
-      Sadness     0.2692    0.2692    0.2692        52
-     Surprise     0.5806    0.2857    0.3830        63
+        Anger     0.6116    0.5592    0.5842       245
+          Joy     0.5311    0.5356    0.5333       239
+Neutral/Other     0.5746    0.7086    0.6346       326
+      Sadness     0.4444    0.2308    0.3038        52
+     Surprise     0.6129    0.3016    0.4043        63
 
-     accuracy                         0.6076       925
-    macro avg     0.5465    0.4981    0.5104       925
- weighted avg     0.6058    0.6076    0.6006       925
+     accuracy                         0.5697       925
+    macro avg     0.5549    0.4671    0.4920       925
+ weighted avg     0.5685    0.5697    0.5608       925
