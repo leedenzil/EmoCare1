@@ -1,0 +1,39 @@
+{
+  "overall": {
+    "accuracy": 0.4186046511627907,
+    "weighted_f1": 0.37450594609462634,
+    "loss": 1.4736268485293669
+  },
+  "per_class": {
+    "Anger": {
+      "precision": 0.4090909090909091,
+      "recall": 0.46153846153846156,
+      "f1_score": 0.43373493975903615,
+      "support": 39
+    },
+    "Joy": {
+      "precision": 0.48333333333333334,
+      "recall": 0.6590909090909091,
+      "f1_score": 0.5576923076923077,
+      "support": 44
+    },
+    "Neutral/Other": {
+      "precision": 0.28,
+      "recall": 0.2916666666666667,
+      "f1_score": 0.2857142857142857,
+      "support": 24
+    },
+    "Sadness": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1_score": 0.0,
+      "support": 5
+    },
+    "Surprise": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1_score": 0.0,
+      "support": 17
+    }
+  }
+}

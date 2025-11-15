@@ -1,0 +1,22 @@
+VIDEO MODEL (CLIP + Temporal Attention) EVALUATION REPORT
+================================================================================
+
+Model: openai/clip-vit-base-patch32
+Frames per video: 8
+Best Epoch: 4
+Validation Loss: 1.4736
+Validation Accuracy: 0.4186
+Validation Weighted F1: 0.3745
+
+Classification Report:
+               precision    recall  f1-score   support
+
+        Anger     0.4091    0.4615    0.4337        39
+          Joy     0.4833    0.6591    0.5577        44
+Neutral/Other     0.2800    0.2917    0.2857        24
+      Sadness     0.0000    0.0000    0.0000         5
+     Surprise     0.0000    0.0000    0.0000        17
+
+     accuracy                         0.4186       129
+    macro avg     0.2345    0.2825    0.2554       129
+ weighted avg     0.3406    0.4186    0.3745       129

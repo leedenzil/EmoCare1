@@ -1,0 +1,21 @@
+IMAGE MODEL (CLIP) EVALUATION REPORT
+================================================================================
+
+Model: openai/clip-vit-base-patch32
+Best Epoch: 1
+Validation Loss: 1.3192
+Validation Accuracy: 0.4567
+Validation Weighted F1: 0.4213
+
+Classification Report:
+               precision    recall  f1-score   support
+
+        Anger     0.4875    0.3305    0.3939       118
+          Joy     0.4303    0.5182    0.4702       137
+Neutral/Other     0.4649    0.6503    0.5422       163
+      Sadness     0.0000    0.0000    0.0000        27
+     Surprise     0.0000    0.0000    0.0000        28
+
+     accuracy                         0.4567       473
+    macro avg     0.2765    0.2998    0.2813       473
+ weighted avg     0.4065    0.4567    0.4213       473

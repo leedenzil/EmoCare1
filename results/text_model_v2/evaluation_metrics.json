@@ -1,0 +1,49 @@
+{
+  "version": "v2",
+  "improvements": [
+    "Class weights",
+    "Label smoothing (0.1)",
+    "Gradient clipping (1.0)",
+    "Early stopping (patience=3)",
+    "ReduceLROnPlateau scheduler"
+  ],
+  "overall": {
+    "accuracy": 0.6281081081081081,
+    "weighted_f1": 0.6292347591325093,
+    "loss": 1.376352227967361,
+    "best_epoch": 3,
+    "total_epochs": 6
+  },
+  "per_class": {
+    "Anger": {
+      "precision": 0.6482213438735178,
+      "recall": 0.6693877551020408,
+      "f1_score": 0.6586345381526104,
+      "support": 245
+    },
+    "Joy": {
+      "precision": 0.6509433962264151,
+      "recall": 0.5774058577405857,
+      "f1_score": 0.6119733924611973,
+      "support": 239
+    },
+    "Neutral/Other": {
+      "precision": 0.703030303030303,
+      "recall": 0.7116564417177914,
+      "f1_score": 0.7073170731707317,
+      "support": 326
+    },
+    "Sadness": {
+      "precision": 0.3176470588235294,
+      "recall": 0.5192307692307693,
+      "f1_score": 0.39416058394160586,
+      "support": 52
+    },
+    "Surprise": {
+      "precision": 0.4444444444444444,
+      "recall": 0.31746031746031744,
+      "f1_score": 0.37037037037037035,
+      "support": 63
+    }
+  }
+}

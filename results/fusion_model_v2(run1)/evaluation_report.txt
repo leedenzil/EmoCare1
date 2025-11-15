@@ -1,0 +1,22 @@
+FUSION MODEL EVALUATION REPORT
+================================================================================
+
+Input: Combined embeddings from Text + Image + Video specialists
+Embedding dimension: 1792
+Best Epoch: 1
+Validation Loss: 1.1183
+Validation Accuracy: 0.6259
+Validation Weighted F1: 0.6178
+
+Classification Report:
+               precision    recall  f1-score   support
+
+        Anger     0.6413    0.7224    0.6795       245
+          Joy     0.6335    0.5858    0.6087       239
+Neutral/Other     0.6628    0.6994    0.6806       326
+      Sadness     0.4510    0.4423    0.4466        52
+     Surprise     0.3333    0.1746    0.2292        63
+
+     accuracy                         0.6259       925
+    macro avg     0.5444    0.5249    0.5289       925
+ weighted avg     0.6152    0.6259    0.6178       925

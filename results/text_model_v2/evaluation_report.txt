@@ -1,0 +1,27 @@
+TEXT MODEL v2 EVALUATION REPORT
+================================================================================
+
+Improvements in v2:
+  - Class weights for imbalance handling
+  - Label smoothing (0.1)
+  - Gradient clipping (1.0)
+  - Early stopping (patience=3)
+  - ReduceLROnPlateau scheduler
+
+Best Epoch: 3
+Validation Loss: 1.3764
+Validation Accuracy: 0.6281
+Validation Weighted F1: 0.6292
+
+Classification Report:
+               precision    recall  f1-score   support
+
+        Anger     0.6482    0.6694    0.6586       245
+          Joy     0.6509    0.5774    0.6120       239
+Neutral/Other     0.7030    0.7117    0.7073       326
+      Sadness     0.3176    0.5192    0.3942        52
+     Surprise     0.4444    0.3175    0.3704        63
+
+     accuracy                         0.6281       925
+    macro avg     0.5529    0.5590    0.5485       925
+ weighted avg     0.6358    0.6281    0.6292       925
